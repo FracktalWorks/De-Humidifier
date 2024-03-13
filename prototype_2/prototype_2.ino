@@ -14,29 +14,29 @@ RESET = pin 23*/
 #ifdef __AVR__
 #include <avr/power.h>
 #endif
+                  //ESP32 S3    //ESP WROOM 32 DEVKIT 
+#define NEOPIXEL_PIN  14            //19
+#define CLOCK         36            //14
+#define DATA          35            //13
+#define CS            21            //16
+#define DC            47            //17
+#define RESET         13            //4
 
-#define NEOPIXEL_PIN  19
-#define CLOCK         14
-#define DATA          13
-#define CS            16
-#define DC            17
-#define RESET         4
+#define DHT_PIN       12            //2
 
-#define DHT_PIN       2
+#define EN_A          39            //27
+#define EN_B          40            //26
+#define EN_BTN        1//45            //5
 
-#define EN_A          27
-#define EN_B          26
-#define EN_BTN        5
+#define BUZZER        48            //18
 
-#define BUZZER        18
+#define RELAY_1       15            //21
+#define RELAY_2       16            //22
 
-#define RELAY_1       21
-#define RELAY_2       22
-
-#define DT_A          23
-#define SCK_A         32
-#define DT_B          25
-#define SCK_B         33
+//#define DT_A          23
+//#define SCK_A         32
+//#define DT_B          25
+//#define SCK_B         33
 
 
 Adafruit_NeoPixel strip(3, NEOPIXEL_PIN, NEO_GRB);
@@ -83,7 +83,7 @@ MUIU8G2 mui;
 
   const char *filaments[] = { "NONE","PLA", "ABS", "NYLON", "PETG", "TPU"};           /*List of all the Filaments*/
   const char *mode[] = {"PREHEAT", "CONTINUOUS"};                                     /*Drying Mode*/
-  const char *stat[] = {"Start", "Abort"};                                             /*Status*/
+  //const char *stat[] = {"Start", "Abort"};                                             /*Status*/
   const char *message[] = {"IDLE", "DRYING", "ABORTED", "DONE"};                      /*Message to show*/
   const char *mode_info[] = {"Dries for a specified amount of time.", "Continuously dries throughout the",  "printing process."};
   
@@ -316,6 +316,7 @@ uint8_t main_menu(mui_t *ui, uint8_t msg){
   
  uint8_t process(mui_t *ui, uint8_t msg){
     int index = start_check ;
+    const char *stat[] = {"Start", "Abort"};
     if ( msg == MUIF_MSG_DRAW ) {
     mui_u8g2_draw_button_utf(ui, fg(ui), 0, u8g2.getDisplayWidth(), 1, stat[index]);
     }
@@ -646,7 +647,7 @@ void setup(void) {
     dht.begin ();
     
     pinMode(BUZZER, OUTPUT);
-    digitalWrite(BUZZER, HIGH);
+    digitalWrite(BUZZER, LOW);
     pinMode(RELAY_1, OUTPUT);
     pinMode(RELAY_2, OUTPUT);
     strip.begin();
@@ -693,7 +694,7 @@ void handle_events(void) {
       for(long int i = 0; i<150000; i++){
         digitalWrite(BUZZER, LOW); 
       }
-      digitalWrite(BUZZER, HIGH);
+      digitalWrite(BUZZER, LOW);
       
   }
   
