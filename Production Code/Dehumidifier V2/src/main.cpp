@@ -73,12 +73,11 @@ MUIU8G2 mui;
   uint8_t is_redraw = 1;
   uint8_t rotary_event = 0; // 0 = not turning, 1 = CW, 2 = CCW
   uint8_t push_event = 0; // 0 = not pushed, 1 = pushed
-  uint8_t encoder_cw_delay = 0;
-  uint8_t encoder_ccw_delay = 0;
+  uint8_t debounce_time = 5; // ms
 
   //Buzzer Settings
-  int buzz_time_push = 5000;
-  int buzz_time_rotate = 100;
+  long int buzz_time_push = 4000;
+  long int buzz_time_rotate = 600;
  
 
 
@@ -88,71 +87,73 @@ MUIU8G2 mui;
 //....................FUNCTIONS....................//
 
 
-// Rotary encoder functions
+//.....Buzzer Functions....//
 
-// detect the rotary encoder events of rotation and push
-void detect_events(void) {
+void pushBuzz(void){ //beep on press
+  digitalWrite(BUZZER, HIGH); 
+  delayMicroseconds(buzz_time_push);
+  digitalWrite(BUZZER, LOW);
+}
+
+void rotationBuzz(void){  //beep on rotate
+
+  digitalWrite(BUZZER, HIGH); 
+  delayMicroseconds(buzz_time_rotate);
+  digitalWrite(BUZZER, LOW); 
+}
+ 
+
+//.....Buzzer Functions....//
+
+
+
+//.....Rotary encoder functions....//
+
+
+void detect_events(void) {  // detect the rotary encoder events of rotation and push
   uint8_t tmp;
-  
   // 0 = not pushed, 1 = pushed  
   tmp = rotary.push();
   if ( tmp != 0 )         // only assign the push event, never clear the event here
+  {
     push_event = tmp;
-    
+    pushBuzz();
+
+  }
   // 0 = not turning, 1 = CW, 2 = CCW
   tmp = rotary.rotate();
   if ( tmp != 0 )       // only assign the rotation event, never clear the event here
   { 
     rotary_event = tmp;
-    for(long int i = 0; i<buzz_time_rotate; i++) //beep on rotate
-    { 
-      digitalWrite(BUZZER, HIGH); 
-    }
-    digitalWrite(BUZZER, LOW); 
+    rotationBuzz();
   }
-
 }
 
-void handle_events(void) {
+void handle_events(void) {  // handle the rotary encoder events
   // 0 = not pushed, 1 = pushed  
   if ( push_event == 1 ) {
       mui.sendSelect();
       is_redraw = 1;
       push_event = 0;
-      for(long int i = 0; i<buzz_time_push; i++){ //beep on press
-        digitalWrite(BUZZER, HIGH); 
-      }
-      digitalWrite(BUZZER, LOW);
-      
   }
   
   // 0 = not turning, 1 = CW, 2 = CCW
   
    if ( rotary_event == 1 ) {
-    if (encoder_cw_delay == 4){
       mui.nextField();
       is_redraw = 1;
       rotary_event = 0;
-      encoder_cw_delay = 0;
       }
-    else {
-      encoder_cw_delay ++;      
-      }
-   }
+
   
   if ( rotary_event == 2 ) {
-    if (encoder_ccw_delay == 4){
       mui.prevField();
       is_redraw = 1;
       rotary_event = 0;
-      encoder_ccw_delay = 0;
-    } 
-    else {
-      encoder_ccw_delay ++;      
-      }
-    }
+}
 }
 
+//.....Rotary encoder functions....//
 
 
 
@@ -698,6 +699,7 @@ fds_t fds_data[] =
 void setup(void) {
   
     dht.begin ();
+    rotary.setDebounceDelay(debounce_time);
     
     pinMode(BUZZER, OUTPUT);
     digitalWrite(BUZZER, LOW);
