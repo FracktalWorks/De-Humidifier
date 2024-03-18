@@ -49,15 +49,15 @@ MUIU8G2 mui;
   uint8_t actual_minute = 0;
   uint8_t actual_hour = 0;
 
-  const char *filaments[] = { "NONE","PLA", "ABS", "NYLON", "PETG", "TPU"};           /*List of all the Filaments*/
+  const char *filaments[] = { "CUSTOM","PLA", "ABS/ASA", "NYLON/PC", "PETG", "TPU", "PEEK", "ULTEM"};  /*List of all the Filaments*/
   const char *mode[] = {"PREHEAT", "CONTINUOUS"};                                     /*Drying Mode*/
   const char *status[] = {"Start", "Abort"};                                             /*Status*/
   const char *message[] = {"IDLE", "DRYING", "ABORTED", "DONE"};                      /*Message to show*/
   const char *mode_info[] = {"Dries for a specified amount of time.", "Continuously dries throughout the",  "printing process."};
   
-  uint8_t temp[] = {20, 80, 120, 130, 140, 160};
+  uint8_t temp[] = {50, 70, 80, 80, 80, 80,100,100};
   uint8_t hour[] = {0, 0, 0, 0, 0, 1};
-  uint8_t minute[] = {0, 30, 20, 35, 40, 20};
+  uint8_t minute[] = {0, 2, 5, 35, 40, 20};
   
   uint16_t mode_idx = 0;
   uint16_t filament_idx = 0;
@@ -159,59 +159,71 @@ void handle_events(void) {  // handle the rotary encoder events
 
 
 
- /*Basic geometry of the main frame without the values.
-  *It corresponds to MUIF_RO("MM", main_menu) in muif_list.*/
-  
-uint8_t main_menu(mui_t *ui, uint8_t msg){
+ /*Basic geometry of the home screen frame
+  *It corresponds to MUIF_RO("MM", home_frame) in muif_list.*/
+uint8_t home_frame(mui_t *ui, uint8_t msg){
   
     if ( msg == MUIF_MSG_DRAW ) {
       
-        u8g2_uint_t x = mui_get_x(ui);
-        u8g2_uint_t y = mui_get_y(ui);
-        
         /*Outer Frame*/
         
         u8g2.drawFrame(0, 0, 128, 64);
-        u8g2.drawHLine(0, 10, 128);
         u8g2.drawHLine(0, 43, 128);
         u8g2.drawHLine(0, 53, 128);
         u8g2.drawVLine(63, 0, 43);
     
-        /*Temperature Gauge*/
-        
-        u8g2.drawCircle(x, y, gauge_radius, U8G2_DRAW_UPPER_RIGHT | U8G2_DRAW_UPPER_LEFT);
-        u8g2.drawCircle(x, y, gauge_radius+1, U8G2_DRAW_UPPER_RIGHT | U8G2_DRAW_UPPER_LEFT);
-        u8g2.drawDisc(x, y, 1, U8G2_DRAW_ALL);
-    
-        /*Humidity Gauge*/
-        
-        u8g2.drawCircle(x+63, y, gauge_radius, U8G2_DRAW_UPPER_RIGHT | U8G2_DRAW_UPPER_LEFT);
-        u8g2.drawCircle(x+63, y, gauge_radius+1, U8G2_DRAW_UPPER_RIGHT | U8G2_DRAW_UPPER_LEFT);
-        u8g2.drawDisc(x+63, y, 1, U8G2_DRAW_ALL); 
     }
    
     return 0;
 }
+
+//Display current temperature on the home screen
+ uint8_t currrent_temperature_humidity(mui_t *ui, uint8_t msg){
+     if ( msg == MUIF_MSG_DRAW ) {
+      
+         u8g2.setCursor(2, 27);
+         u8g2.print(actual_temp);
+         u8g2.setCursor(65, 27);
+         u8g2.print(humidity);
+     }
+      return 0;
+  }
+
+//Display target temperature & humidity
+ uint8_t target_temperature_humidity(mui_t *ui, uint8_t msg){
+  
+     if ( msg == MUIF_MSG_DRAW ) {
+         
+         u8g2.setCursor(30, 38);
+         if (filament_idx == 0)
+            u8g2.print("/--");
+         else
+         {
+            u8g2.print("/");
+            u8g2.print(temp[filament_idx]+5);
+         }
+          u8g2.setCursor(94, 38);
+          if (filament_idx == 0)
+            u8g2.print("/--");
+          else
+          {
+            u8g2.print("/");
+            u8g2.print(5);
+          }
+     }
+      return 0;
+  }
+
+
 
 /*Shows the changing values in the main screen.
  *It corresponds to MUIF_RO("SV", stat_val) in muif_list.*/
  uint8_t stat_val(mui_t *ui, uint8_t msg){
   
      if ( msg == MUIF_MSG_DRAW ) {
-      
-         u8g2.setCursor(13, 8);
-         u8g2.print(actual_temp);
-      
-         u8g2.setCursor(96, 8);
-         u8g2.print(humidity);
          
-         u8g2.setCursor(38, 8);
-         if (filament_idx == 0)
-            u8g2.print("--");
-         else
-            u8g2.print(temp[filament_idx]+5);
   
-         u8g2.setCursor(43, 61);
+         u8g2.setCursor(22, 61);
          u8g2.print(filaments[filament_idx]);
   
          u8g2.setCursor(28, 51);
@@ -237,60 +249,7 @@ uint8_t main_menu(mui_t *ui, uint8_t msg){
      return 0;
  }
 
-/*Shows the gauge values.
- *It corresponds to MUIF_RO("GV", gauge_value) in muif_list.*/
- uint8_t gauge_value(mui_t *ui, uint8_t msg){
-  
-     if ( msg == MUIF_MSG_DRAW ) {
-         if (filament_idx == 0){
-            minimum_temp_gauge_value = 0;
-            maximum_temp_gauge_value = 100;
-         }
-         else{
-            minimum_temp_gauge_value = 20;
-            maximum_temp_gauge_value = temp[filament_idx] + 5;
-         }
-         int temp_inc = (maximum_temp_gauge_value - minimum_temp_gauge_value)/5;
-         int hum_inc =  (maximum_hum_gauge_value - minimum_hum_gauge_value)/5;
-         int x_new = 12*cos(radians(((float(actual_temp) - float(maximum_temp_gauge_value))/(float(minimum_temp_gauge_value) - float(maximum_temp_gauge_value)))*180));
-         int y_new = 12*sin(radians(((float(actual_temp) - float(maximum_temp_gauge_value))/(float(minimum_temp_gauge_value) - float(maximum_temp_gauge_value)))*180));
-         int x_rh_new = 12*cos(radians(((float(humidity) - float(100))/- float(100))*180));
-         int y_rh_new = 12*sin(radians(((float(humidity) - float(100))/- float(100))*180));
-         
-         u8g2_uint_t x = mui_get_x(ui);
-         u8g2_uint_t y = mui_get_y(ui);
-         u8g2.setFont(u8g2_font_tiny5_tf);
 
-         u8g2.drawLine(x-2,y, x - 2 + x_new ,y - y_new);
-         u8g2.setCursor(x+17,y+2);
-         u8g2.print(maximum_temp_gauge_value);
-         u8g2.setCursor(x+14,y-9);
-         u8g2.print(minimum_temp_gauge_value+(4*temp_inc));
-         u8g2.setCursor(x+3,y-17);
-         u8g2.print(minimum_temp_gauge_value+(3*temp_inc));
-         u8g2.setCursor(x-13,y-17);
-         u8g2.print(minimum_temp_gauge_value+(2*temp_inc));
-         u8g2.setCursor(x-24,y-9);
-         u8g2.print(minimum_temp_gauge_value+(1*temp_inc));
-         u8g2.setCursor(x-28,y+2);
-         u8g2.print(minimum_temp_gauge_value+(0*temp_inc));
-
-         u8g2.drawLine(x+64-3,y, x + 64-3 + x_rh_new,y - y_rh_new);
-         u8g2.setCursor(x+80,y+2);
-         u8g2.print(minimum_hum_gauge_value+(5*hum_inc));
-         u8g2.setCursor(x+77,y-9);
-         u8g2.print(minimum_hum_gauge_value+(4*hum_inc));
-         u8g2.setCursor(x+66,y-17);
-         u8g2.print(minimum_hum_gauge_value+(3*hum_inc));
-         u8g2.setCursor(x+50,y-17);
-         u8g2.print(minimum_hum_gauge_value+(2*hum_inc));
-         u8g2.setCursor(x+39,y-9);
-         u8g2.print(minimum_hum_gauge_value+(1*hum_inc));
-         u8g2.setCursor(x+38,y+2);
-         u8g2.print(minimum_hum_gauge_value+(0*hum_inc));
-        }
-        return 0;
-     }
  
 /*Changes the background colour.
  *It corresponds to MUIF_RO("BG", colour) in muif_list.*/
@@ -299,25 +258,19 @@ uint8_t main_menu(mui_t *ui, uint8_t msg){
      if ( msg == MUIF_MSG_DRAW ) {
          switch (check){
             case 1:
-              strip.setPixelColor(0, strip.Color(255, 0, 0));
-              //strip.setPixelColor(1, strip.Color(5, 5, 5));
-              //strip.setPixelColor(2, strip.Color(0, 0, 0));
+              strip.setPixelColor(0, strip.Color(0, 255, 0));
               strip.show();
               u8g2.setCursor(86,61);
               u8g2.print(message[check]);
               break;
            case 2:
-              strip.setPixelColor(0, strip.Color(0, 255, 0));
-              //strip.setPixelColor(1, strip.Color(5, 5, 5));
-              //strip.setPixelColor(2, strip.Color(0, 0, 0));
+              strip.setPixelColor(0, strip.Color(255, 0, 0));
               strip.show();
               u8g2.setCursor(86,61);
               u8g2.print(message[check]);
               break;
            case 3:
               strip.setPixelColor(0, strip.Color(0, 0, 255));
-              //strip.setPixelColor(1, strip.Color(5, 5, 5));
-              //strip.setPixelColor(2, strip.Color(0, 0, 0));
               strip.show();
               u8g2.setCursor(86,61);
               u8g2.print(message[check]);
@@ -345,9 +298,9 @@ uint8_t main_menu(mui_t *ui, uint8_t msg){
 }
 
 /*Basic geometry of the general frame without the values.
-  *It corresponds to MUIF_RO("GM", general_menu) in muif_list.*/
+  *It corresponds to MUIF_RO("GM", menu_frame) in muif_list.*/
   
- uint8_t general_menu(mui_t *ui, uint8_t msg){
+ uint8_t menu_frame(mui_t *ui, uint8_t msg){
     if ( msg == MUIF_MSG_DRAW ) {
       u8g2.drawFrame(0, 0, 128, 64);
       u8g2.drawHLine(0, 13, 128);
@@ -428,13 +381,13 @@ uint8_t mode_inf(mui_t *ui, uint8_t msg) {
 
 
  /* Total number of filaments. 
-  *It corresponds to MUIF_RO("BG", main_menu) in muif_list.*/
+  *It corresponds to MUIF_RO("BG", home_frame) in muif_list.*/
   uint16_t filament_name_list_get_cnt(void *data) {
     return sizeof(filaments)/sizeof(*filaments);   
   }
 
   /* Filament corresponding to particular id 
-   *It corresponds to MUIF_RO("BG", main_menu) in muif_list.*/
+   *It corresponds to MUIF_RO("BG", home_frame) in muif_list.*/
   const char *filament_name_list_get_str(void *data, uint16_t index) {
     return filaments[index];
   }
@@ -560,27 +513,31 @@ uint8_t minute_list(mui_t *ui, uint8_t msg){
 muif_t muif_list[] = {
     MUIF_U8G2_FONT_STYLE(0, u8g2_font_helvR08_tr),        /* regular font */
     MUIF_U8G2_FONT_STYLE(1, u8g2_font_helvB08_tr),        /* bold font */
-    MUIF_U8G2_FONT_STYLE(2, u8g2_font_tiny5_tf),          /* tiny font */
+    MUIF_U8G2_FONT_STYLE(2, u8g2_font_tiny5_tf),          /* tiny font */ 
+    MUIF_U8G2_FONT_STYLE(3, u8g2_font_maniac_te),         /* actual temp/humi font */
+    MUIF_U8G2_FONT_STYLE(4, u8g2_font_littlemissloudonbold_te),  /* target temp/humi font */
     MUIF_U8G2_LABEL(),
   
-    /*Mostly Form 1 related*/
-    MUIF_RO("MM", main_menu),
-    MUIF_RO("SV", stat_val),
-    MUIF_RO("GV", gauge_value),
+    /*Mostly Form 1 [HOME SCREEN] related*/
+    MUIF_RO("MM", home_frame),  //Draw Home frame
+    MUIF_RO("SV", stat_val),  //Print Status elements
+    MUIF_RO("TH", currrent_temperature_humidity), //Print Current Temperature and Humidity
+    MUIF_RO("TV", target_temperature_humidity),  //Print Target Temperature and Humidity
+
     MUIF_RO("BG", colour),
     MUIF_BUTTON("BT", mui_u8g2_btn_goto_wm_fi),
   
-    /*Mostly Form 2 related*/
-    MUIF_RO("GM", general_menu),
+    /*Mostly Form 2 [MENU] related*/
+    MUIF_RO("GM", menu_frame),  //Draw Menu frame
     MUIF_GOTO(process),
     MUIF_BUTTON("GF",mui_u8g2_goto_form_w1_pi),
     MUIF_RO("GD", mui_u8g2_goto_data),
   
-    /*Mostly Form 4 related*/
+    /*Mostly Form 4 [MODE] related*/
     MUIF_U8G2_U16_LIST("MD", &mode_idx, NULL, mode_get_str, mode_get_cnt, mui_u8g2_u16_list_line_wa_mud_pi),
     MUIF_RO("MI", mode_inf),
     
-    /*Mostly Form 5 related*/
+    /*Mostly Form 5 [MATERIAL] related*/
     MUIF_U8G2_U16_LIST("FN", &filament_idx, NULL, filament_name_list_get_str, filament_name_list_get_cnt, mui_u8g2_u16_list_line_wa_mud_pi),
     MUIF_BUTTON("TL", temp_list),
     MUIF_BUTTON("HL", hour_list),
@@ -590,71 +547,49 @@ muif_t muif_list[] = {
 fds_t fds_data[] =
 
   /*
-   * Form 1
+   * Form 1 [HOME SCREEN]
    */
     MUI_FORM(1)
-  
-    MUI_STYLE(2)
+    MUI_STYLE(3)  // actual temp/humi font
+    MUI_AUX("TH")
+    MUI_STYLE(4) // target temp/humi font
+    MUI_AUX("TV")
+    MUI_STYLE(2) // tiny font
     MUI_XY("MM", 30, 38)
+    MUI_LABEL(54,8, "°C")
+    MUI_LABEL(112,8,"RH%")
     MUI_AUX("SV")
     MUI_AUX("BG")
-    MUI_XY("GV", 32, 38)
-    MUI_LABEL(5,8, "T:")
-    MUI_LABEL(25,8, "°C/")
-    MUI_LABEL(50,8, "°C")
-    MUI_LABEL(82,8, "RH:")
-    MUI_LABEL(109,8,"%")
     MUI_LABEL(86,51, "TIME:")
     MUI_LABEL(113,51, ":")
     MUI_LABEL(3,51, "MODE:")
-    MUI_LABEL(3,61,"MATERIAL:")
-  
+    MUI_LABEL(3,61,"MAT:")
     MUI_XYAT("BT", 130, 80, 2, "Next")
 
   /*
-   * Form 2
+   * Form 2 [MENU]
    */
     MUI_FORM(2)
     
-    MUI_AUX("GM")
-  
+    MUI_AUX("GM")  //Draw Menu frame
     MUI_STYLE(1)
     MUI_LABEL(48, 11, "MENU")
-    
     MUI_STYLE(0)
     MUI_GOTO(5, 24, 1,"")
-    MUI_DATA("GD",
-        MUI_3 "Settings")
-        
+      MUI_DATA("GD",
+      MUI_4 "Mode|"
+      MUI_5 "Material|")
     MUI_XYA("GF", 5, 36, 0)
+    MUI_XYA("GF", 5, 48, 1)
     MUI_XYAT("BT", 64, 62, 1, "BACK")
 
-  /*
-   * Form 3
-   */
-    MUI_FORM(3)
-
-    MUI_AUX("GM")
-
-    MUI_STYLE(1)
-    MUI_LABEL(37, 11, "SETTINGS")
-
-    MUI_STYLE(0)
-    MUI_DATA("GD",
-        MUI_4 "Mode|"
-        MUI_5 "Material|")
-
-    MUI_XYA("GF", 5, 24, 0)
-    MUI_XYA("GF", 5, 36, 1)
-
-    MUI_XYAT("BT", 64, 62, 2, "BACK")
 
   /*
-   * Form 4
+   * Form 4 [MODE]
    */
     MUI_FORM(4)
 
-    MUI_AUX("GM")
+    MUI_AUX("GM") //Draw Menu frame
   
     MUI_STYLE(1)
     MUI_LABEL(48, 11, "MODE")
@@ -663,7 +598,7 @@ fds_t fds_data[] =
     MUI_LABEL(5, 24, "SET:")
      
     MUI_XYA("MD", 30, 24, 44)
-    MUI_XYAT("BT", 64, 62, 3, "BACK")
+    MUI_XYAT("BT", 64, 62, 2, "BACK")
 
     MUI_STYLE(2)
     MUI_XYA("MI", 2, 40, 34)  
@@ -671,11 +606,11 @@ fds_t fds_data[] =
     
    
   /*
-   * Form 5
+   * Form 5 [MATERIAL]
    */
     MUI_FORM(5)
 
-    MUI_AUX("GM")
+    MUI_AUX("GM") //Draw Menu frame
 
     MUI_STYLE(1)
     MUI_LABEL(36, 11, "MATERIAL")
@@ -690,7 +625,7 @@ fds_t fds_data[] =
     MUI_XYA("HL", 45, 49, 87)
     MUI_XYA("ML", 65, 49, 86)
 
-    MUI_XYAT("BT", 64, 62, 3, "BACK")
+    MUI_XYAT("BT", 64, 62, 2, "BACK")
 
   
 ;
@@ -722,7 +657,7 @@ void setup(void) {
 
 }
 
-
+// Read the temperature and humidity from the DHT sensor
 void read_from_dht(void){
   if (!(isnan (actual_temp) || isnan (humidity))) {
     actual_temp = dht.readTemperature();
@@ -730,6 +665,7 @@ void read_from_dht(void){
     is_redraw = 1;
   }
 }
+// Control the humidity Bang Bang controller
 void humidity_controller(void){
   if (start_check == 1){
     if (humidity < 8){
@@ -743,6 +679,8 @@ void humidity_controller(void){
     digitalWrite(RELAY_1, LOW);
   }
 }
+
+// Control the temperature Bang Bang controller
 void temperature_controller(void){
   if (start_check == 1){
     if (actual_temp < (temp[filament_idx]-2)){
@@ -757,6 +695,7 @@ void temperature_controller(void){
   }
 }
 
+// Check the clock
 void check_continuous_clock(void){
   current_time = millis();
   if (current_time - prev_time > 60000){
