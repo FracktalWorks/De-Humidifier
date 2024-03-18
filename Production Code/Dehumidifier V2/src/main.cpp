@@ -51,7 +51,7 @@ MUIU8G2 mui;
 
   const char *filaments[] = { "CUSTOM","PLA", "ABS/ASA", "NYLON/PC", "PETG", "TPU", "PEEK", "ULTEM"};  /*List of all the Filaments*/
   const char *mode[] = {"PREHEAT", "CONTINUOUS"};                                     /*Drying Mode*/
-  const char *status[] = {"Start", "Abort"};                                             /*Status*/
+  const char *status[] = {"Start ", "Abort"};                                             /*Status*/
   const char *message[] = {"IDLE", "DRYING", "ABORTED", "DONE"};                      /*Message to show*/
   const char *mode_info[] = {"Dries for a specified amount of time.", "Continuously dries throughout the",  "printing process."};
   
@@ -530,8 +530,8 @@ muif_t muif_list[] = {
     /*Mostly Form 2 [MENU] related*/
     MUIF_RO("GM", menu_frame),  //Draw Menu frame
     MUIF_GOTO(process),
-    MUIF_BUTTON("GF",mui_u8g2_goto_form_w1_pi),
-    MUIF_RO("GD", mui_u8g2_goto_data),
+    MUIF_BUTTON("GF",mui_u8g2_goto_form_w1_pi),  //Buttons for "inverted text cursor"
+    MUIF_RO("GD", mui_u8g2_goto_data),  //Create field for the definition of jump targets
   
     /*Mostly Form 4 [MODE] related*/
     MUIF_U8G2_U16_LIST("MD", &mode_idx, NULL, mode_get_str, mode_get_cnt, mui_u8g2_u16_list_line_wa_mud_pi),
@@ -577,10 +577,10 @@ fds_t fds_data[] =
     MUI_STYLE(0)
     MUI_GOTO(5, 24, 1,"")
       MUI_DATA("GD",
-      MUI_4 "Mode|"
-      MUI_5 "Material|")
-    MUI_XYA("GF", 5, 36, 0)
-    MUI_XYA("GF", 5, 48, 1)
+      MUI_4 "Set Mode|"
+      MUI_5 "Set Material|")
+    MUI_XYA("GF", 5, 36, 0)  //Buttons for "inverted text cursor"
+    MUI_XYA("GF", 5, 48, 1)  //Buttons for "inverted text cursor"
     MUI_XYAT("BT", 64, 62, 1, "BACK")
 
 
