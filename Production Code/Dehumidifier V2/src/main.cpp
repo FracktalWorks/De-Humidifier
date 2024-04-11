@@ -55,9 +55,9 @@ MUIU8G2 mui;
   const char *message[] = {"IDLE", "DRYING", "ABORTED", "DONE"};                      /*Message to show*/
   const char *mode_info[] = {"Dries for a specified amount of time.", "Continuously dries throughout the",  "printing process."};
   
-  uint8_t temp[] = {50, 70, 80, 80, 80, 80,100,100};
-  uint8_t hour[] = {0, 0, 0, 0, 0, 1};
-  uint8_t minute[] = {0, 2, 5, 35, 40, 20};
+  uint8_t temp[] = {50, 60, 70, 80, 70, 80, 100, 100};
+  uint8_t hour[] = {2, 4, 6, 10, 10, 10, 24, 24};
+  uint8_t minute[] = {0, 0, 0, 0, 0, 0,0,0};
   
   uint16_t mode_idx = 0;
   uint16_t filament_idx = 0;
@@ -436,7 +436,7 @@ uint8_t temp_list(mui_t *ui, uint8_t msg){
  *It corresponds to MUIF_BUTTON("HL", hour_list) in muif_list.*/
 uint8_t hour_list(mui_t *ui, uint8_t msg){
   
-  custom_minute = hour[filament_idx];
+  custom_hour = hour[filament_idx];
   
   if (msg == MUIF_MSG_DRAW){
       //mui_u8g2_draw_button_utf(ui, mui_u8g2_get_fi_flags(ui), 0, 2, 0, u8x8_u8toa(custom_hour, 2));
@@ -710,14 +710,30 @@ void check_continuous_clock(void){
     is_redraw = 1;
   }
 }
-/*void check_preset_clock(void){
-  current_time = millis();
-  if (current_time - prev_time > time_interval){
-    
+void check_preset_clock(void){
+current_time = millis();
+  if (current_time - prev_time > 60000){
+    prev_time = millis();
+    if (actual_minute == 59){
+      actual_minute = 0;
+      actual_hour ++;
+    }
+    else {
+      actual_minute++;
+    }
+    is_redraw = 1;
   }
-  
-  
-}*/
+  if (((actual_hour * 3600000UL) + (actual_minute* 60000UL)) > time_interval){
+    start_check = 0;
+    check = 3;
+    actual_minute = 0;
+    actual_hour = 0;
+    is_redraw = 1;
+  }
+}
+
+// if mode is preheat, then set a countdown timer
+
 
 void loop() {
   
@@ -729,12 +745,12 @@ void loop() {
     if ((start_check == 1) && (mode_idx == 1)){
       check_continuous_clock();
     }
-    /*else if ((start_check == 1) && (mode_idx == 0)){
+    else if ((start_check == 1) && (mode_idx == 0)){
       new_minute = minute[filament_idx] * 60000UL;
       new_hour = hour[filament_idx] * 3600000UL;
       time_interval = new_minute + new_hour;
       check_preset_clock();
-    }*/
+    }
     /* update the display content, if the redraw flag is set */
     if ( is_redraw ) {
       u8g2.firstPage();
