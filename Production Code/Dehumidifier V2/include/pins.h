@@ -10,8 +10,8 @@
 
 #define DHT_PIN       12            //2
 
-#define EN_A          39            //27
-#define EN_B          40            //26
+#define EN_A          5            //27
+#define EN_B          4            //26
 #define EN_BTN        1//45            //5
 
 #define BUZZER        48            //18
